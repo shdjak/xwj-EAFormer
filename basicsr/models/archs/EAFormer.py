@@ -1,8 +1,3 @@
-## AdaIR: Adaptive All-in-One Image Restoration via Frequency Mining and Modulation
-## Yuning Cui, Syed Waqas Zamir, Salman Khan, Alois Knoll, Mubarak Shah, and Fahad Shahbaz Khan
-## https://arxiv.org/abs/2403.14614
-
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -217,248 +212,19 @@ class Upsample(nn.Module):
 
     def forward(self, x):
         return self.body(x)
+
+
 ###################################################################
 ##filter
-def Egde(size=3, channel=1, scale=1e-3):
-    if size == 3:
-        param = torch.ones((channel, 1, 3, 3), dtype=torch.float32) * (-1)
-        for i in range(channel):
-            param[i][0][1][1] = 8
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 5:
-        param = torch.ones((channel, 1, 5, 5), dtype=torch.float32) * (-1)
-        for i in range(channel):
-            param[i][0][1][2] = 2
-            param[i][0][2][1] = 2
-            param[i][0][2][2] = 4
-            param[i][0][2][3] = 2
-            param[i][0][3][2] = 2
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    else:
-        raise NotImplementedError
-
-    return param
-
-
-def Sobel(size=3, channel=1, scale=1e-3, direction='x'):
-    if size == 3:
-        param = torch.zeros((channel, 1, 3, 3), dtype=torch.float32)
-        for i in range(channel):
-            param[i][0][0][0] = param[i][0][2][0] = 1
-            param[i][0][0][2] = param[i][0][2][2] = -1
-            param[i][0][1][0] = 2
-            param[i][0][1][2] = -2
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 5:
-        param = torch.zeros((channel, 1, 5, 5), dtype=torch.float32)
-        for i in range(channel):
-            param[i][0][0][0] = param[i][0][4][0] = 1
-            param[i][0][0][1] = param[i][0][4][1] = 2
-            param[i][0][0][3] = param[i][0][4][3] = -2
-            param[i][0][0][4] = param[i][0][4][4] = -1
-
-            param[i][0][1][0] = param[i][0][3][0] = 4
-            param[i][0][1][1] = param[i][0][3][1] = 8
-            param[i][0][1][3] = param[i][0][3][3] = -8
-            param[i][0][1][4] = param[i][0][3][4] = -4
-
-            param[i][0][2][0] = 6
-            param[i][0][2][1] = 12
-            param[i][0][2][3] = -12
-            param[i][0][2][4] = -6
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    else:
-        raise NotImplementedError
-
-    if direction == 'x':
-        return param
-    else:
-        return param.transpose(3, 2)
-
-
-def Sobel_xy(size=3, channel=1, scale=1e-3, direction='xy'):
-    param = torch.zeros((channel, 1, 3, 3), dtype=torch.float32)
-    if size == 3 and direction == 'xy':
-        for i in range(channel):
-            param[i][0][0][1] = 1
-            param[i][0][0][2] = 2
-            param[i][0][1][0] = -1
-            param[i][0][1][2] = 1
-            param[i][0][2][0] = -2
-            param[i][0][2][1] = -1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 3 and direction == 'yx':
-        for i in range(channel):
-            param[i][0][0][0] = -2
-            param[i][0][0][1] = -1
-            param[i][0][1][0] = -1
-            param[i][0][1][2] = 1
-            param[i][0][2][1] = 1
-            param[i][0][2][2] = 2
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    else:
-        raise NotImplementedError
-
-    return param
-
-
-def Roberts(size=3, channel=1, scale=1e-3, direction='x'):
-    if size == 3 and direction == 'x':
-        param = torch.zeros((channel, 1, 3, 3), dtype=torch.float32)
-        for i in range(channel):
-            param[i][0][0][0] = 1
-            param[i][0][1][1] = -1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 3 and direction == 'y':
-        param = torch.zeros((channel, 1, 3, 3), dtype=torch.float32)
-        for i in range(channel):
-            param[i][0][0][1] = 1
-            param[i][0][1][0] = -1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 2 and direction == 'x':
-        param = torch.zeros((channel, 1, 2, 2), dtype=torch.float32)
-        for i in range(channel):
-            param[i][0][0][0] = 1
-            param[i][0][1][1] = -1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 2 and direction == 'y':
-        param = torch.zeros((channel, 1, 2, 2), dtype=torch.float32)
-        for i in range(channel):
-            param[i][0][0][1] = 1
-            param[i][0][1][0] = -1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    else:
-        raise NotImplementedError
-
-    return param
-
-
-def Prewitt(size=3, channel=1, scale=1e-3, direction='x'):
-    param = torch.zeros((channel, 1, 3, 3), dtype=torch.float32)
-    if size == 3 and direction == 'y':
-        for i in range(channel):
-            param[i][0][0][0] = -1
-            param[i][0][1][0] = -1
-            param[i][0][2][0] = -1
-            param[i][0][0][2] = 1
-            param[i][0][1][2] = 1
-            param[i][0][2][2] = 1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 3 and direction == 'x':
-        for i in range(channel):
-            param[i][0][0][0] = -1
-            param[i][0][0][1] = -1
-            param[i][0][0][2] = -1
-            param[i][0][2][0] = 1
-            param[i][0][2][1] = 1
-            param[i][0][2][2] = 1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 3 and direction == 'xy':
-        for i in range(channel):
-            param[i][0][0][1] = 1
-            param[i][0][0][2] = 1
-            param[i][0][1][0] = -1
-            param[i][0][1][2] = 1
-            param[i][0][2][0] = -1
-            param[i][0][2][1] = -1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    elif size == 3 and direction == 'yx':
-        for i in range(channel):
-            param[i][0][0][0] = -1
-            param[i][0][0][1] = -1
-            param[i][0][1][0] = -1
-            param[i][0][1][2] = 1
-            param[i][0][2][1] = 1
-            param[i][0][2][2] = 1
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-
-    else:
-        raise NotImplementedError
-
-    return param
-
-
-def Laplacian(channel=1, scale=1e-3, type=1):
-    param = torch.ones((channel, 1, 3, 3), dtype=torch.float32)
-    if type == 1:
-        for i in range(channel):
-            param[i][0][0][0] = 0
-            param[i][0][0][2] = 0
-            param[i][0][1][1] = -4
-            param[i][0][2][0] = 0
-            param[i][0][2][2] = 0
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-    else:
-        for i in range(channel):
-            param[i][0][1][1] = -4
-        param = nn.Parameter(data=param * scale, requires_grad=False)
-    return param
-
-
-def HighPass(x, kernel_size=15, sigma=5):
-    filter2 = torchvision.transforms.GaussianBlur(kernel_size=kernel_size, sigma=sigma)
-    gauss = filter2(x)
-    return x - gauss
-
 class Filters(nn.Module):
     def __init__(self, dim):
         super().__init__()
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        # device = torch.device('cpu')
-
-        self.dim = dim
-        self.Sobel_x = Sobel(channel=dim, direction='x').to(device)
-        self.Sobel_y = Sobel(channel=dim, direction='y').to(device)
-        self.Laplation = Laplacian(channel=dim).to(device)
-        self.Edge = Egde(channel=dim).to(device)
-        self.Roberts_x = Roberts(channel=dim, direction='x').to(device)
-        self.Roberts_y = Roberts(channel=dim, direction='y').to(device)
-        self.Sobel_xy = Sobel_xy(channel=dim, direction='xy').to(device)
-        self.Sobel_yx = Sobel_xy(channel=dim, direction='yx').to(device)
-        self.Prewitt_x = Prewitt(channel=dim, direction='x').to(device)
-        self.Prewitt_y = Prewitt(channel=dim, direction='y').to(device)
-        self.Prewitt_xy = Prewitt(channel=dim, direction='xy').to(device)
-        self.Prewitt_yx = Prewitt(channel=dim, direction='yx').to(device)
-        self.alpha = nn.Parameter(torch.ones_like(torch.FloatTensor(13)).to(device).requires_grad_())
-        self.beta = nn.Parameter(torch.zeros_like(torch.FloatTensor(1)).to(device).requires_grad_())
-
-        # self.conv3_single = nn.Conv2d(dim,dim,kernel_size=3, padding=1, stride=1,groups=dim,bias=False)
-        # self.beta1 = nn.Parameter(torch.zeros_like(torch.FloatTensor(1)).to(device).requires_grad_())
-        # self.conv1 = nn.Conv2d(dim,dim,kernel_size=1, padding=0, stride=1, groups=dim,bias=False)
-        # self.conv3 = nn.Conv2d(dim,dim,kernel_size=3, padding=1, stride=1,groups=dim,bias=False)
-        # self.beta2 = nn.Parameter(torch.zeros_like(torch.FloatTensor(1)).to(device).requires_grad_())
 
 
     def forward(self, x):
 
-        Sobel_x = F.conv2d(input=x, weight=self.Sobel_x, stride=1, groups=self.dim, padding=1) * self.alpha[0]
-        Sobel_y = F.conv2d(input=x, weight=self.Sobel_y, stride=1, groups=self.dim, padding=1) * self.alpha[1]
-        Laplation = F.conv2d(input=x, weight=self.Laplation, stride=1, groups=self.dim, padding=1) * self.alpha[2]
-        Egde = F.conv2d(input=x, weight=self.Edge, stride=1, groups=self.dim, padding=1) * self.alpha[3]
-        Sobel_xy = F.conv2d(input=x, weight=self.Sobel_xy, stride=1, groups=self.dim, padding=1) * self.alpha[4]
-        Sobel_yx = F.conv2d(input=x, weight=self.Sobel_yx, stride=1, groups=self.dim, padding=1) * self.alpha[5]
-        Roberts_x = F.conv2d(input=x, weight=self.Roberts_x, stride=1, groups=self.dim, padding=1) * self.alpha[6]
-        Roberts_y = F.conv2d(input=x, weight=self.Roberts_y, stride=1, groups=self.dim, padding=1) * self.alpha[7]
-        high_pass = HighPass(x) * self.alpha[8]
-        Prewitt_x = F.conv2d(input=x, weight=self.Prewitt_x, stride=1, groups=self.dim, padding=1)* self.alpha[9]
-        Prewitt_y = F.conv2d(input=x, weight=self.Prewitt_y, stride=1, groups=self.dim, padding=1)* self.alpha[10]
-        Prewitt_xy = F.conv2d(input=x, weight=self.Prewitt_xy, stride=1, groups=self.dim, padding=1) * self.alpha[11]
-        Prewitt_yx = F.conv2d(input=x, weight=self.Prewitt_yx, stride=1, groups=self.dim, padding=1) * self.alpha[12]
-        return (Sobel_x + Sobel_y + Laplation + Egde + x * self.beta[0] +
-                Sobel_xy + Sobel_yx + Roberts_x + Roberts_y + high_pass + Prewitt_x + Prewitt_y +Prewitt_xy + Prewitt_yx)
+# Our code will be released after the paper is published
+
 
 
 ##########################################################################
@@ -495,6 +261,11 @@ class AttnBlock_v1(nn.Module):
 
         return x
 
+
+##########################################################################
+## part of the codes come from:
+## Simple Baselines for Image Restoration
+## Liangyu Chen, Xiaojie Chu⋆, Xiangyu Zhang, and Jian Sun
 ###################  Simplified Channel Attention #############################
 class SimpleGate(nn.Module):
     def forward(self, x):
@@ -589,165 +360,22 @@ class OverlapPatchEmbed(nn.Module):
 
 
 ##########################################################################
-## H-L Unit
-class SpatialGate(nn.Module):
-    def __init__(self):
-        super(SpatialGate, self).__init__()
-
-        self.spatial = nn.Conv2d(2, 1, kernel_size=7, padding=3, bias=False)
-
-    def forward(self, x):
-        max = torch.max(x, 1, keepdim=True)[0]
-        mean = torch.mean(x, 1, keepdim=True)
-        scale = torch.cat((max, mean), dim=1)
-        scale = self.spatial(scale)
-        scale = F.sigmoid(scale)
-        return scale
-
-
-##########################################################################
-## L-H Unit
-class ChannelGate(nn.Module):
-    def __init__(self, dim):
-        super(ChannelGate, self).__init__()
-        self.avg = nn.AdaptiveAvgPool2d((1, 1))
-        self.max = nn.AdaptiveMaxPool2d((1, 1))
-
-        self.mlp = nn.Sequential(
-            nn.Conv2d(dim, dim // 16, 1, bias=False),
-            nn.ReLU(),
-            nn.Conv2d(dim // 16, dim, 1, bias=False)
-        )
-
-    def forward(self, x):
-        avg = self.mlp(self.avg(x))
-        max = self.mlp(self.max(x))
-
-        scale = avg + max
-        scale = F.sigmoid(scale)
-        return scale
-
-
-##########################################################################
-## Frequency Modulation Module (FMoM)
-class FreRefine(nn.Module):
-    def __init__(self, dim):
-        super(FreRefine, self).__init__()
-
-        self.SpatialGate = SpatialGate()
-        self.ChannelGate = ChannelGate(dim)
-        self.proj = nn.Conv2d(dim, dim, kernel_size=1)
-
-    def forward(self, low, high):
-        spatial_weight = self.SpatialGate(high)
-        channel_weight = self.ChannelGate(low)
-        high = high * channel_weight
-        low = low * spatial_weight
-
-        out = low + high
-        out = self.proj(out)
-        return out
-
-
-##########################################################################
-## Adaptive Frequency Learning Block (AFLB)
-##########################################################################
-## Adaptive Frequency Learning Block (AFLB)
+## part of the codes come from:
+## AdaIR: Adaptive All-in-One Image Restoration via Frequency Mining and Modulation
+## Yuning Cui, Syed Waqas Zamir, Salman Khan, Alois Knoll, Mubarak Shah, and Fahad Shahbaz Khan
 class FreModule(nn.Module):
     def __init__(self, dim, num_heads, bias, in_dim=3):
         super(FreModule, self).__init__()
 
-        self.conv = nn.Conv2d(in_dim, dim, kernel_size=3, stride=1, padding=1, bias=False)
-        self.conv1 = nn.Conv2d(in_dim, dim, kernel_size=3, stride=1, padding=1, bias=False)
-
-        self.score_gen = nn.Conv2d(2, 2, 7, padding=3)
-
-        self.para1 = nn.Parameter(torch.zeros(dim, 1, 1))
-        self.para2 = nn.Parameter(torch.ones(dim, 1, 1))
-
-        self.sca_l = Simplified_Channel_Attention(dim)
-        self.sca_h = Simplified_Channel_Attention(dim)
-        self.sca_agg = Simplified_Channel_Attention(dim)
-
-        self.conv1_l = nn.Conv2d(in_channels=2 * dim, out_channels=dim, kernel_size=1, bias=False)
-        self.conv1_h = nn.Conv2d(in_channels=2 * dim, out_channels=dim, kernel_size=1, bias=False)
-        self.conv1_agg = nn.Conv2d(in_channels=2 * dim, out_channels=dim, kernel_size=1, bias=False)
-
-        self.frequency_refine = FreRefine(dim)
-
-        self.rate_conv = nn.Sequential(
-            nn.Conv2d(dim, dim // 8, 1, bias=False),
-            nn.GELU(),
-            nn.Conv2d(dim // 8, 2, 1, bias=False),
-        )
-
     def forward(self, x, y):
-        _, _, H, W = y.size()
-        x = F.interpolate(x, (H, W), mode='bilinear')
 
-        high_feature, low_feature = self.fft(x)
-
-
-        high_feature = self.sca_l(high_feature)
-
-        high_feature = self.conv1_l(torch.cat([high_feature, y], 1))
-
-        low_feature = self.sca_h(low_feature)
-        low_feature = self.conv1_h(torch.cat([low_feature, y], 1))
-
-        agg = self.frequency_refine(low_feature, high_feature)
-
-        out = self.conv1_agg(torch.cat([agg,self.sca_agg(y)], 1))
-
-        return out * self.para1 + y * self.para2
-
-    def shift(self, x):
-        '''shift FFT feature map to center'''
-        b, c, h, w = x.shape
-        return torch.roll(x, shifts=(int(h / 2), int(w / 2)), dims=(2, 3))
-
-    def unshift(self, x):
-        """converse to shift operation"""
-        b, c, h, w = x.shape
-        return torch.roll(x, shifts=(-int(h / 2), -int(w / 2)), dims=(2, 3))
-
-    def fft(self, x, n=128):
-        """obtain high/low-frequency features from input"""
-        x = self.conv1(x)
-        mask = torch.zeros(x.shape).to(x.device)
-        h, w = x.shape[-2:]
-
-        threshold = F.adaptive_avg_pool2d(x, 1)
-        threshold = self.rate_conv(threshold).sigmoid()
-
-        for i in range(mask.shape[0]):
-            h_ = (h // n * threshold[i, 0, :, :]).int()
-            w_ = (w // n * threshold[i, 1, :, :]).int()
-
-            mask[i, :, h // 2 - h_:h // 2 + h_, w // 2 - w_:w // 2 + w_] = 1
-
-        fft = torch.fft.fft2(x, norm='forward', dim=(-2, -1))
-        fft = self.shift(fft)
-
-        fft_high = fft * (1 - mask)
-
-        high = self.unshift(fft_high)
-        high = torch.fft.ifft2(high, norm='forward', dim=(-2, -1))
-        high = torch.abs(high)
-
-        fft_low = fft * mask
-
-        low = self.unshift(fft_low)
-        low = torch.fft.ifft2(low, norm='forward', dim=(-2, -1))
-        low = torch.abs(low)
-
-        return high, low
+# Our code will be released after the paper is published
 
 
 ##########################################################################
 ##---------- AdaIR -----------------------
 
-class AdaIR_s3(nn.Module):
+class EAFormer(nn.Module):
     def __init__(self,
                  inp_channels=3,
                  out_channels=3,
@@ -762,7 +390,7 @@ class AdaIR_s3(nn.Module):
                  dual_pixel_task=False
                  ):
 
-        super(AdaIR_s3, self).__init__()
+        super(EAFormer, self).__init__()
         self.dual_pixel_task = dual_pixel_task
         #### For Dual-Pixel Defocus Deblurring Task ####
         self.dual_pixel_task = dual_pixel_task
@@ -880,11 +508,8 @@ class AdaIR_s3(nn.Module):
 
 #----------test----------
 if __name__ == '__main__':
-    #输入（1，3，x，y） N C H W, 输出也是一样的
-    #pretrain_network_g: ./Deraining/pretrained_models/net_g_252000_attnv1.pth
-    #mini_batch_sizes: [4,2,2,1,1,1]
     x = torch.randn(1, 3, 64, 64).cuda()
-    model =AdaIR_s3().cuda()
+    model =EAFormer.cuda()
     # print(model)
     y = model(x)
     print(y.shape)
