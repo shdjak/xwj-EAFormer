@@ -1,5 +1,5 @@
 # general settings
-name: GaussianColorDenoising_RestormerSigma25
+name: GaussianColorDenoising_EAFormerSigma25
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 8  # set num_gpu: 0 for cpu mode
@@ -55,7 +55,7 @@ datasets:
 
 # network structures
 network_g:
-  type: Restormer
+  type: EAFormer
   inp_channels: 3
   out_channels: 3
   dim: 48

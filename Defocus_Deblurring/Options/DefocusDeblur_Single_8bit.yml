@@ -1,5 +1,5 @@
 # general settings
-name: DefocusDeblur_Single_8bit_Restormer
+name: DefocusDeblur_Single_8bit_EAFormer
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 8  # set num_gpu: 0 for cpu mode
@@ -21,13 +21,13 @@ datasets:
     # data loader
     use_shuffle: true
     num_worker_per_gpu: 8
-    batch_size_per_gpu: 8
+    batch_size_per_gpu: 4
 
     ### -------------Progressive training--------------------------
-    mini_batch_sizes: [8,5,4,2,1,1]             # Batch size per gpu   
+    mini_batch_sizes: [4,2,2,1,1,1]             # Batch size per gpu   
     iters: [92000,64000,48000,36000,36000,24000]
     gt_size: 384   # Max patch size for progressive training
-    gt_sizes: [128,160,192,256,320,384]  # Patch sizes for progressive training.
+    gt_sizes: [128,160,192,224,256,256]  # Patch sizes for progressive training.
     ### ------------------------------------------------------------
 
     ### ------- Training on single fixed-patch size 128x128---------
@@ -50,7 +50,7 @@ datasets:
 
 # network structures
 network_g:
-  type: Restormer
+  type: EAFormer
   inp_channels: 3
   out_channels: 3
   dim: 48

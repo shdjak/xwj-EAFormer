@@ -1,5 +1,5 @@
 # general settings
-name: GaussianColorDenoising_adair_tlc_Sigma50
+name: GaussianColorDenoising_EAFormerSigma50
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 1  # set num_gpu: 0 for cpu mode
@@ -26,62 +26,20 @@ datasets:
     # data loader
     use_shuffle: true
     num_worker_per_gpu: 8
-    #batch_size_per_gpu: 8！！！！决定了[B,C,H,W]的B
     batch_size_per_gpu: 8
 
 #    ### -------------Progressive training--------------------------
-    #原版
-#    mini_batch_sizes: [7,4,3,1,1,1]             # Batch size per gpu
-#    iters: [92000,64000,48000,36000,36000,24000]
-#    gt_size: 320   # Max patch size for progressive training
-#    gt_sizes: [128,160,192,256,320,320]  # Patch sizes for progressive training.
-
-#  adair + ukan
-#    mini_batch_sizes: [5,3,2,1,1,1]             # Batch size per gpu
-#    iters: [92000,64000,48000,36000,36000,24ressive training
-    ##    gt_sizes: [128,160,192,256,320,320]  # Pa000]
-#    gt_size: 320   # Max patch size for progtch sizes for progressive training.
-
-#    SMFANET
-#    mini_batch_sizes: [7,4,3,1,1,1]             # Batch size per gpu
-#    iters: [92000,64000,48000,36000,36000,24000]
-#    gt_size: 320   # Max patch size for progressive training
-#    gt_sizes: [128,160,192,256,320,320]  # Patch sizes for progressive training.
-
-    # adair + mambair，
-#    mini_batch_sizes: [7,4,3,1,1,1]             # Batch size per gpu
-#    iters: [92000,64000,48000,36000,36000,24000]
-#    gt_size: 384   # Max patch size for progressive training
-#    gt_sizes: [128,160,192,256,320,384]  # Patch sizes for progressive training.
-
-#    condformer、adair add agentattention配置
-    # 必看：由于agent attention无法处理test中的数据的高度宽度不一致的情况，故自己在basicir/models/image_restoration_model的def pad_test中做了一定修改，采用其他模型时记得调回默认代码
-#    mini_batch_sizes: [7,4,3,1,1,1]             # Batch size per gpu
-#    iters: [92000,64000,48000,36000,36000,24000]
-#    gt_size: 320   # Max patch size for progressive training
-#    gt_sizes: [128,160,192,256,320,320]  # Patch sizes for progressive training.
-#    ### ------------------------------------------------------------
-
-
-#    ### -------------Progressive training--------------------------
-    #ramit配置
-#    mini_batch_sizes: [2,1]             # Batch size per gpu
-#    iters: [150000,150000]
-#    gt_size: 192   # Max patch size for progressive training
-#    gt_sizes: [128,192]  # Patch sizes for progressive training.
-#    ### ------------------------------------------------------------
+    mini_batch_sizes: [4,2,2,1,1,1]             # Batch size per gpu
+    iters: [92000,64000,48000,36000,36000,24000]
+    gt_sizes: [128,160,192,224,256,256]  # Pa000]
+    gt_size: [256]   # Max patch size for progtch sizes for progressive training.
 
     ### ------- Training on single fixed-patch size 128x128---------
     #
-    mini_batch_sizes: [1]
-    iters: [300000]
-    gt_size: 320
-    gt_sizes: [320]
-
-#    mini_batch_sizes: [ 1 ]
-#    iters: [ 300000 ]
-#    gt_size: 384
-#    gt_sizes: [ 384 ]
+    # mini_batch_sizes: [1]
+    # iters: [300000]
+    # gt_size: 320
+    # gt_sizes: [320]
     ### ------------------------------------------------------------
 
     dataset_enlarge_ratio: 1
@@ -103,31 +61,13 @@ datasets:
 
 # network structures
 network_g:
-  type: AdaIRLocal
+  type: EAFormer
   inp_channels: 3
   out_channels: 3
-  #原版dim: 48，ramit要求64
-#  dim: 64
-  #condformer
   dim: 48
 
-  # 原版num_blocks: [4,6,6,8]
   num_blocks: [4,6,6,8]
-  # mambair-config
-#  num_blocks: [3,4,4,4]
-  #现在是ramit版num_blocks: [6,4,4,6]
-# SMFANET num_blocks: [8,8,8,8]
-  #num_blocks: [3,4,4,4]
-#  num_blocks: [1,1,1,1]
-
-  # 原版num_refinement_blocks: 4
-  #现在是ramit版num_refinement_blocks:4
-  # mambair-config
-  #num_refinement_blocks: 1
   num_refinement_blocks: 4
-
-  # 原版 heads: [1,2,4,8]
-  #现在是ramit版heads: [4,4,4,4]，用8会报错，不能除尽8
   heads: [1,2,4,8]
 
   ffn_expansion_factor: 2.66
@@ -138,10 +78,7 @@ network_g:
 
 # path
 path:
-#  pretrain_network_g: ./experiments/GaussianColorDenoising_AdaIR_SMFANETv4_Sigma50/models/net_g_284000.pth
-#  pretrain_network_g: experiments/GaussianColorDenoising_Restormer_tlcv3_Sigma50/models/net_g_272000.pth
   pretrain_network_g: ./Denoising/pretrained_models/gaussian_color_denoising_sigma50.pth
-#  pretrain_network_g: ./experiments/GaussianColorDenoising_AdaIR_LONPE_Sigma50/models/net_g_300000.pth
   strict_load_g: true
   resume_state: ~
 
@@ -183,8 +120,6 @@ train:
 # validation settings
 val:
   window_size: 8
-#  原版val_freq: !!float 4e3
-#  val_freq: !!float 2e2
   val_freq: !!float 4e3
   save_img: false
   rgb2bgr: true
@@ -204,11 +139,7 @@ val:
 
 # logging settings
 logger:
-#  原版print_freq: 1000
-#  print_freq: 100
   print_freq: 1000
-#  原版save_checkpoint_freq: !!float 4e3
-#  save_checkpoint_freq: !!float 2e2
   save_checkpoint_freq: !!float 4e3
   use_tb_logger: true
   wandb:

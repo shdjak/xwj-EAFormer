@@ -1,5 +1,5 @@
 # general settings
-name: Deraining_AdaIR_attnv1_myfiltersmallv2_noshaerweight_noegeunet_Rain100L
+name: Deraining_EAFormerRain100L
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 1  # set num_gpu: 0 for cpu mode
@@ -23,26 +23,16 @@ datasets:
     num_worker_per_gpu: 8
     batch_size_per_gpu: 8
 
-    ### -------------Progressive training myself--------------------------
-#    mini_batch_sizes: [6,4,2,2,1,1]         #自己修改过    # Batch size per gpu
-#    iters: [92000,64000,48000,36000,36000,24000]
-#    gt_size: 320   # Max patch size for progressive training
-#    gt_sizes: [128,160,192,224,256,320]  # Patch sizes for progressive training.
-    ### ------------------------------------------------------------
+
 
     ### -------------Progressive training_egeunet--------------------------
-#    mini_batch_sizes: [4,2,1,1,1,1]         #自己修改过    # Batch size per gpu
-#    iters: [92000,64000,48000,36000,36000,24000]
-#    gt_size: 384   # Max patch size for progressive training
-#    gt_sizes: [128,160,192,224,256,256]  # Patch sizes for progressive training.
+    mini_batch_sizes: [4,2,2,1,1,1]         #   # Batch size per gpu
+    iters: [92000,64000,48000,36000,36000,24000]
+    gt_size: 384   # Max patch size for progressive training
+    gt_sizes: [128,160,192,224,256,256]  # Patch sizes for progressive training.
     ### ------------------------------------------------------------
 
-    ### ------- Training on single fixed-patch size 128x128---------
-    mini_batch_sizes: [1] #这个里面的数必须比batch_size_per_gpu小
-    iters: [300000]
-    gt_size: 192
-    gt_sizes: [192]
-    ### ------------------------------------------------------------
+
 
     dataset_enlarge_ratio: 1
     prefetch_mode: ~
@@ -57,7 +47,7 @@ datasets:
 
 # network structures
 network_g:
-  type: AdaIR_s2
+  type: EAFormer
   inp_channels: 3
   out_channels: 3
   dim: 48

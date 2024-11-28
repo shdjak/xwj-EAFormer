@@ -1,5 +1,5 @@
 # general settings
-name: RealDenoising_Restormer_iRMB_origin_attention_weight_load
+name: RealDenoising_EAFormerReal
 model_type: ImageCleanModel
 scale: 1
 num_gpu: 1  # set num_gpu: 0 for cpu mode
@@ -24,17 +24,17 @@ datasets:
     batch_size_per_gpu: 24
 
     ### -------------Progressive training--------------------------
-#    mini_batch_sizes: [6,4,3,1,1]             # Batch size per gpu
-#    iters: [92000,64000,48000,36000,60000]
-#    gt_size: 320   # Max patch size for progressive training
-#    gt_sizes: [128,160,192,256,320]  # Patch sizes for progressive training.
+    mini_batch_sizes: [4,2,2,1,1,1]             # Batch size per gpu
+    iters: [92000,64000,48000,36000,36000,24000]
+    gt_size: 256  # Max patch size for progressive training
+    gt_sizes: [128,160,192,224,256,256]  # Patch sizes for progressive training.
     ### ------------------------------------------------------------
 
     ### ------- Training on single fixed-patch size 128x128---------
-    mini_batch_sizes: [24]
-    iters: [150000]
-    gt_size: 64
-    gt_sizes: [64]
+    # mini_batch_sizes: [24]
+    # iters: [150000]
+    # gt_size: 64
+    # gt_sizes: [64]
     ### ------------------------------------------------------------
 
     dataset_enlarge_ratio: 1
@@ -50,7 +50,7 @@ datasets:
 
 # network structures
 network_g:
-  type: Restormer
+  type: EAFormer
   inp_channels: 3
   out_channels: 3
   dim: 48
