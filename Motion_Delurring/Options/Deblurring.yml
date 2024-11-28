@@ -1,23 +1,23 @@
 # general settings
-name: DefocusDeblur_DualPixel_16bit_Restormer
+name: Deblurring_Restormer
 model_type: ImageCleanModel
 scale: 1
-num_gpu: 8  # set num_gpu: 0 for cpu mode
+num_gpu: 1  # set num_gpu: 0 for cpu mode
 manual_seed: 100
 
 # dataset and data loader settings
 datasets:
   train:
     name: TrainSet
-    type: Dataset_DefocusDeblur_DualPixel_16bit
-    dataroot_gt: ./Defocus_Deblurring/Datasets/train/DPDD/target_crops
-    dataroot_lqL: ./Defocus_Deblurring/Datasets/train/DPDD/inputL_crops
-    dataroot_lqR: ./Defocus_Deblurring/Datasets/train/DPDD/inputR_crops
+    type: Dataset_PairedImage
+    dataroot_gt: ./Motion_Deblurring/Datasets/train/GoPro/target_crops
+    dataroot_lq: ./Motion_Deblurring/Datasets/train/GoPro/input_crops
     geometric_augs: true
 
     filename_tmpl: '{}'
     io_backend:
       type: disk
+#      type: lmdb
 
     # data loader
     use_shuffle: true
@@ -25,17 +25,24 @@ datasets:
     batch_size_per_gpu: 8
 
     ### -------------Progressive training--------------------------
-    mini_batch_sizes: [8,5,4,2,1,1]             # Batch size per gpu   
-    iters: [92000,64000,48000,36000,36000,24000]
-    gt_size: 384   # Max patch size for progressive training
-    gt_sizes: [128,160,192,256,320,384]  # Patch sizes for progressive training.
+#    mini_batch_sizes: [8,5,4,2,1,1]             # Batch size per gpu
+#    iters: [92000,64000,48000,36000,36000,24000]
+#    gt_size: 384   # Max patch size for progressive training
+#    gt_sizes: [128,160,192,256,320,384]  # Patch sizes for progressive training.
+    ### ------------------------------------------------------------
+
+      ### -------------Progressive training--------------------------
+#    mini_batch_sizes: [4,2,2,1,1,1]         #自己修改过    # Batch size per gpu
+#    iters: [92000,64000,48000,36000,36000,24000]
+#    gt_size: 384   # Max patch size for progressive training
+#    gt_sizes: [128,160,192,224,256,256]  # Patch sizes for progressive training.
     ### ------------------------------------------------------------
 
     ### ------- Training on single fixed-patch size 128x128---------
-    # mini_batch_sizes: [8]   
-    # iters: [300000]
-    # gt_size: 128   
-    # gt_sizes: [128]
+    mini_batch_sizes: [2]
+    iters: [300000]
+    gt_size: 192
+    gt_sizes: [192]
     ### ------------------------------------------------------------
 
     dataset_enlarge_ratio: 1
@@ -43,17 +50,17 @@ datasets:
 
   val:
     name: ValSet
-    type: Dataset_DefocusDeblur_DualPixel_16bit
-    dataroot_gt: ./Defocus_Deblurring/Datasets/val/DPDD/target_crops
-    dataroot_lqL: ./Defocus_Deblurring/Datasets/val/DPDD/inputL_crops
-    dataroot_lqR: ./Defocus_Deblurring/Datasets/val/DPDD/inputR_crops
+    type: Dataset_PairedImage
+    dataroot_gt: ./Motion_Deblurring/Datasets/val/GoPro/target_crops
+    dataroot_lq: ./Motion_Deblurring/Datasets/val/GoPro/input_crops
     io_backend:
       type: disk
+#      type: lmdb
 
 # network structures
 network_g:
-  type: Restormer
-  inp_channels: 6
+  type: AdaIR_s3
+  inp_channels: 3
   out_channels: 3
   dim: 48
   num_blocks: [4,6,6,8]
@@ -62,12 +69,13 @@ network_g:
   ffn_expansion_factor: 2.66
   bias: False
   LayerNorm_type: WithBias
-  dual_pixel_task: True
+  dual_pixel_task: False
 
 
 # path
 path:
-  pretrain_network_g: ~
+#  pretrain_network_g: ./Motion_Deblurring/pretrained_models/motion_deblurring.pth
+  pretrain_network_g: ./Motion_Deblurring/pretrained_models/net_g_264000.pth
   strict_load_g: true
   resume_state: ~
 
@@ -107,9 +115,10 @@ train:
 val:
   window_size: 8
   val_freq: !!float 4e3
+#  val_freq: !!float 2e2
   save_img: false
   rgb2bgr: true
-  use_image: false
+  use_image: true
   max_minibatch: 8
 
   metrics:
@@ -118,9 +127,20 @@ val:
       crop_border: 0
       test_y_channel: false
 
+    ssim: # metric name, can be arbitrary
+      type: calculate_ssim
+      crop_border: 0
+      test_y_channel: false
+
+    mae:
+      type:
+
+
 # logging settings
 logger:
+#  print_freq: 100
   print_freq: 1000
+#  save_checkpoint_freq: !!float 2e2
   save_checkpoint_freq: !!float 4e3
   use_tb_logger: true
   wandb:
