@@ -19,4 +19,35 @@ Wenjie Xie, Dong Zhou, Wenshuai Zhang, Wenrui Wang, Dan Tian
 
 Network Architecture
 ----
+![](https://github.com/shdjak/xwj-EAFormer/blob/main/Network%20Architecture.jpg)
 
+Installation
+---
+Prepare the environment of cuda11.8, torch2.0.1, torchaudio2.0.2, torchvision0.15.2.
+
+After that, run:<br>
+`python setup.py develop --no_cuda_ext`
+
+Data preparation
+---
+The format of the dataset is [here](https://github.com/swz30/Restormer/tree/main/Deraining/Datasets)
+
+Traning 
+--
+Take desnowing as an example:<br>
+`python basicsr/train.py -opt Desnowing/Options/Desnowing.yml`
+
+Testing 
+--
+You can refer to [here](https://github.com/swz30/Restormer/blob/main/Deraining/README.md#evaluation)
+
+Contact
+--
+If you have any questions, please contact xiewenjie_uestc@163.com.
+
+**Acknowledgment:** Our code is based on the [Restormer](https://github.com/swz30/Restormer) repository.<br>
+[AdaIR](https://github.com/c-yn/AdaIR) and [LIR](https://github.com/Dongqi-Fan/LIR) also give us a lot of inspiration.
+
+
+
+  
