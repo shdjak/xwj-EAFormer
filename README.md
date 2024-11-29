@@ -46,7 +46,7 @@ Contact
 If you have any questions, please contact xiewenjie_uestc@163.com.
 
 **Acknowledgment:** Our code is based on the [Restormer](https://github.com/swz30/Restormer) repository.<br>
-[AdaIR](https://github.com/c-yn/AdaIR) and [LIR](https://github.com/Dongqi-Fan/LIR) also give us a lot of inspiration.
+
 
 
 
